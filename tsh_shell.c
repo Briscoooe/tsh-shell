@@ -17,7 +17,6 @@ int tsh_pwd(char **args);
 int tsh_ifc(char **args);
 int tsh_dt(char **args);
 int tsh_ud(char **args);
-int tsh_ping(char **args);
 int ip_validator(const char *s);
 
 /*
@@ -33,12 +32,11 @@ int ip_validator(const char *s);
 char *builtin_str[] = {
         "cd",
         "help",
-        "exit",
+        "logout",
         "pw",
         "ifc",
         "dt",
         "ud",
-        "ping"
 };
 
 int (*builtin_func[]) (char **) = {
@@ -49,7 +47,6 @@ int (*builtin_func[]) (char **) = {
         &tsh_ifc,
         &tsh_dt,
         &tsh_ud,
-        &tsh_ping
 };
 
 int tsh_num_builtins()
@@ -176,7 +173,7 @@ int tsh_ifc(char **args)
         {
                 int result;
 
-                // 
+                //
                 result = ip_validator(args[2]);
                 if(result == 1)
                 {
@@ -257,46 +254,6 @@ int tsh_ud(char **args)
         stat(home, &s);
 
         printf("%d, %d, %s, %s, %ld\n", uid, gid, p, g->gr_name,(long) s.st_ino);
-}
-
-/**
-        @brief External command: ping - pings a specific IP address
-        @param List of args, args[1] is the IP address
-        @return Always returns 1, to continue execution
- */
-int tsh_ping(char **args)
-{
-        // If no argument is passed
-        if(args[1] == NULL)
-        {
-            fprintf(stderr, "tsh: expected argument to \"ping\"\n");
-        }
-
-        else
-        {
-                FILE *fp;
-                char command[100];
-                int result;
-
-                // Validate the IP address passed in
-                result = ip_validator(args[1]);
-                if(result == 1)
-                {
-                        // Combine the IP address with the ping command and store the result in the variable
-                        sprintf(command, "/bin/ping %s", args[1]);
-
-                        // Run the command
-                        fp = popen(command, "r");
-                        pclose(fp);
-                }
-
-                else
-                {
-                        fprintf(stderr, "tsh: invalid argument to \"ping\"\n");
-                }
-        }
-        return 1;
-
 }
 
 /**
@@ -503,8 +460,10 @@ void tsh_loop(void)
         char **args;
         int status;
         char whoami[100];
+        const char *const green = "\033[0;40;32m";
+        const char *const normal = "\033[0m";
 
-        // Running the username command 
+        // Running the username command
         fp = popen("/usr/bin/whoami", "r");
         while(fgets(whoami, sizeof(whoami)-1, fp) != NULL)
         {
@@ -515,7 +474,7 @@ void tsh_loop(void)
         pclose(fp);
         do
         {
-                printf("%s@tsh > ", whoami);
+                printf("%s%s@tsh >%s ",green ,whoami, normal);
                 line = tsh_read_line();
                 args = tsh_split_line(line);
                 status = tsh_execute(args);
